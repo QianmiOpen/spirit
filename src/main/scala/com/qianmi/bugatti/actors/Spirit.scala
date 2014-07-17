@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit
 import akka.actor._
 import akka.io.IO
 import akka.util.Timeout
-import com.qianmi.bugatti.fs.FileWatchActor
 import com.qianmi.bugatti.http.MyServiceActor
 import spray.can.Http
 import akka.pattern.ask
@@ -21,7 +20,6 @@ object Spirit {
     implicit val timeout = Timeout(5.seconds)
 
     val commandsActor = system.actorOf(Props[CommandsActor], name = "Commands")
-    val fileWatchActor = system.actorOf(Props[FileWatchActor], name = "FileWatch")
 
 //    import system.dispatcher
 //    system.scheduler.schedule(1.seconds, 1.seconds, commandsActor, CheckResults)
