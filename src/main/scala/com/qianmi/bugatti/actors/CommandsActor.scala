@@ -4,20 +4,18 @@ import java.io.File
 import java.util.Date
 
 import akka.actor._
-import play.api.libs.iteratee.Input.Empty
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{JsObject, Json}
 
 import scala.collection.mutable
-import scala.sys.process.Process
-
 import scala.concurrent.duration._
+import scala.sys.process.Process
 
 /**
  * Created by mind on 7/16/14.
  */
 
 // salt执行命令
-case class SaltCommand(id: Int, command: Seq[String], delayTime: Int = 0, workDir: String = ".")
+case class SaltCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".", id: Int = 0)
 
 // salt执行结果
 case class SaltResult(result: String, excuteMicroseconds: Long)
@@ -93,7 +91,7 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
           context.parent ! CheckJob(jid, cmd.delayTime)
         }
 
-        log.debug( s"""Execute "${cmd.command.mkString(" ")}"; ret: ${ret}""")
+        log.debug( s"""Execute "${cmd.command.mkString(" ")}"; id: ${cmd.id}; ret: ${ret}""")
       } catch {
         case x: Exception => log.warning(s"Run exception: ${x}")
       }

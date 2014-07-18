@@ -45,7 +45,7 @@ object Spirit {
 //      inbox.send(commandsActor, SaltCommand(Seq("salt", "minion0", "state.sls", "java.install")))
 //      inbox.send(commandsActor, SaltCommand(Seq("salt", "*", "test.ping"), 3))
 //      inbox.send(commandsActor, SaltCommand(Seq("salt", "minion0", "test.ping")))
-      inbox.send(commandsActor, SaltCommand(i, Seq("salt", "8e6499e6412a", "test.ping")))
+      inbox.send(commandsActor, SaltCommand(Seq("salt", "8e6499e6412a", "test.ping")))
     }
 
     for (j <- 1 to doCount) {
