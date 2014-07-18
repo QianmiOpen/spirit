@@ -78,16 +78,26 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
 
   import context._
 
+  var timeOutSchedule: Cancellable = _
+
   val TimeOutSeconds = 600 seconds
 
   val beginDate = new Date
 
   var jid = ""
 
-  override def preStart = {
-    context.system.scheduler.scheduleOnce(TimeOutSeconds) {
+  var reRunTimesWhenException = 1
+
+  override def preStart(): Unit = {
+    timeOutSchedule = context.system.scheduler.scheduleOnce(TimeOutSeconds) {
       remoteSender ! TimeOut
       context.stop(self)
+    }
+  }
+
+  override def postStop(): Unit = {
+    if (timeOutSchedule != null) {
+      timeOutSchedule.cancel()
     }
   }
 
@@ -105,19 +115,18 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
       } catch {
         case x: Exception => {
           log.warning(s"Run exception: ${x}; path: ${self.path}")
-          self ! Run
+          if (reRunTimesWhenException > 0) {
+            reRunTimesWhenException -= 1
+            self ! Run
+          }
         }
       }
     }
 
     case jobRet: JobFinish => {
-      try {
-        remoteSender ! SaltResult(jobRet.result, (new Date().getTime - beginDate.getTime))
+      remoteSender ! SaltResult(jobRet.result, (new Date().getTime - beginDate.getTime))
 
-        context.stop(self)
-      } catch {
-        case x: Exception => log.warning(s"CheckJid exception: ${x}")
-      }
+      context.stop(self)
     }
 
     case x => log.info(s"Unknown salt command message: ${x}")
