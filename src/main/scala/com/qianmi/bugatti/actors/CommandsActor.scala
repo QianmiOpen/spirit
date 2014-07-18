@@ -15,7 +15,7 @@ import scala.sys.process.Process
  */
 
 // salt执行命令
-case class SaltCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".", id: Int = 0)
+case class SaltCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".")
 
 // salt执行结果
 case class SaltResult(result: String, excuteMicroseconds: Long)
@@ -32,7 +32,7 @@ class CommandsActor extends Actor with ActorLogging {
 
   override def receive = {
     case cmd: SaltCommand => {
-      val saltCmd = context.actorOf(Props(classOf[SaltCommandActor], cmd, sender).withDispatcher("execute-dispatcher"), name = "run_%d".format(cmd.id))
+      val saltCmd = context.actorOf(Props(classOf[SaltCommandActor], cmd, sender).withDispatcher("execute-dispatcher"))
 
       saltCmd ! Run
     }
@@ -61,7 +61,7 @@ class CommandsActor extends Actor with ActorLogging {
       } ! jobRet
     }
 
-    case `Status` => {
+    case Status => {
       val ret = context.children.map { child =>
         child.toString()
       }
@@ -75,11 +75,21 @@ class CommandsActor extends Actor with ActorLogging {
 
 
 private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends Actor with ActorLogging {
-  val TimeOutSeconds = 600
+
+  import context._
+
+  val TimeOutSeconds = 600 seconds
 
   val beginDate = new Date
 
   var jid = ""
+
+  override def preStart = {
+    context.system.scheduler.scheduleOnce(TimeOutSeconds) {
+      remoteSender ! TimeOut
+      context.stop(self)
+    }
+  }
 
   override def receive = {
     case Run => {
@@ -91,9 +101,12 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
           context.parent ! CheckJob(jid, cmd.delayTime)
         }
 
-        log.debug( s"""Execute "${cmd.command.mkString(" ")}"; id: ${cmd.id}; ret: ${ret}""")
+        log.debug( s"""Execute "${cmd.command.mkString(" ")}"; path: ${self.path}; ret: ${ret}""")
       } catch {
-        case x: Exception => log.warning(s"Run exception: ${x}")
+        case x: Exception => {
+          log.warning(s"Run exception: ${x}; path: ${self.path}")
+          self ! Run
+        }
       }
     }
 
@@ -115,9 +128,9 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
 
   import context._
 
-  val cmdSet = mutable.Set[ActorRef]().empty
+  val reRunNotifySet = mutable.Set[ActorRef]().empty
 
-  var jsonRet = Json.obj()
+  var mergedJonsonRet = Json.obj()
 
   var scheduleOne: Cancellable = _
 
@@ -134,7 +147,7 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
       if (bReturn) {
         cmdActor ! Run
       }
-      cmdSet += cmdActor
+      reRunNotifySet += cmdActor
     }
 
     case NotifyMe(cmdActor) => {
@@ -161,7 +174,7 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
           context.parent ! ReRunNotify(reRunJid, m_cmdActor)
         }
       } else {
-        cmdSet.foreach { cmdActor =>
+        reRunNotifySet.foreach { cmdActor =>
           cmdActor ! Run
         }
 
@@ -171,13 +184,13 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
             log.debug(s"JobResult stop immediatly: ${jobRet}")
           }
         } else {
-          jsonRet = jsonRet ++ retJson.as[JsObject]
+          mergedJonsonRet = mergedJonsonRet ++ retJson.as[JsObject]
 
           if (scheduleOne != null) scheduleOne.cancel
 
           scheduleOne = context.system.scheduler.scheduleOnce(delayTime seconds) {
             if (m_cmdActor != null) {
-              m_cmdActor ! JobFinish(jobRet.jid, Json.stringify(jsonRet))
+              m_cmdActor ! JobFinish(jobRet.jid, Json.stringify(mergedJonsonRet))
               log.debug(s"JobResult stop scheduler: ${jobRet}")
             }
           }

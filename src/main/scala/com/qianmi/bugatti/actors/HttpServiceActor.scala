@@ -38,7 +38,7 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
         //      inbox.send(commandsActor, SaltCommand(Seq("salt", "minion0", "state.sls", "java.install")))
         //      inbox.send(commandsActor, SaltCommand(Seq("salt", "*", "test.ping"), 3))
         //      inbox.send(commandsActor, SaltCommand(Seq("salt", "minion0", "test.ping")))
-        commandsActor ! SaltCommand(Seq("salt", "8e6499e6412a", "test.ping"), id = i)
+        commandsActor ! SaltCommand(Seq("salt", "8e6499e6412a", "test.ping"))
       }
 
       sender ! HttpResponse(entity = "test ok")
@@ -71,6 +71,7 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
     }
 
     case SaltResult(lines, time) => log.debug(s"execute ${time}ms: result: ${lines}")
+
     //    case HttpRequest(GET, Uri.Path("/stop"), _, _, _) =>
     //      sender ! HttpResponse(entity = "Shutting down in 1 second ...")
     //      sender ! Http.Close
