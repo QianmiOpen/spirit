@@ -33,13 +33,16 @@ class CommandsActor extends Actor with ActorLogging {
   override def receive = {
     case cmd: SaltCommand => {
       val saltCmd = context.actorOf(Props(classOf[SaltCommandActor], cmd, sender).withDispatcher("execute-dispatcher"))
-
+      //log.info(s"remoteSender: ${sender}")
+      println(s"cmd: ${cmd}")
+      println(s"remoteSender: ${sender}")
       saltCmd ! Run
     }
 
     // 从cmd触发过来
     case CheckJob(jid, delayTime) => {
       val jn = jobName(jid)
+      log.debug(s"CommandsActor ==>  ${context.children}")
       context.child(jn).getOrElse {
         context.actorOf(Props(classOf[SaltResultActor], delayTime), name = jn)
       } ! NotifyMe(sender)
@@ -107,7 +110,7 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
         val ret = Process(cmd.command ++ Seq("--return", "spirit", "--async"), new File(cmd.workDir)).lines.mkString(",")
         if (ret.size > 0 && ret.contains("Executed command with job ID")) {
           jid = ret.replaceAll("Executed command with job ID: ", "")
-
+          log.info(s"SaltCommandActor ==> ${context.parent}")
           context.parent ! CheckJob(jid, cmd.delayTime)
         }
 
@@ -154,25 +157,27 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
   override def receive: Receive = {
     case ReRunNotify(jid, cmdActor) => {
       if (bReturn) {
-        cmdActor ! Run
+        if (cmdActor != null) {
+          cmdActor ! Run
+        }
       }
-      reRunNotifySet += cmdActor
+      if (cmdActor != null) {
+        reRunNotifySet += cmdActor
+      }
     }
 
     case NotifyMe(cmdActor) => {
+      log.debug(s" this is NotifyMe in SaltResultActor !")
       if (bReturn) {
         cmdActor ! m_jobRet
       }
       if (reRunJid.length > 0) {
-        context.parent ! ReRunNotify(reRunJid, m_cmdActor)
+        context.parent ! ReRunNotify(reRunJid, cmdActor)
       }
       m_cmdActor = cmdActor
     }
 
     case jobRet: JobFinish => {
-      bReturn = true
-      m_jobRet = jobRet
-
       val retJson = Json.parse(jobRet.result)
       val resultLines = (retJson \ "result" \ "return").validate[Seq[String]].asOpt.getOrElse(Seq.empty)
 
@@ -183,6 +188,9 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
           context.parent ! ReRunNotify(reRunJid, m_cmdActor)
         }
       } else {
+        bReturn = true
+        m_jobRet = jobRet
+
         reRunNotifySet.foreach { cmdActor =>
           cmdActor ! Run
         }
