@@ -29,3 +29,5 @@ resolvers ++= Seq(
   "Scala-Tools Maven2 Snapshots Repository" at "http://scala-tools.org/repo-snapshots",
   "oss" at "https://oss.sonatype.org/content/repositories/staging/"
 )
+
+mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf")) }

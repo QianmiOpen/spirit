@@ -32,17 +32,17 @@ class CommandsActor extends Actor with ActorLogging {
 
   override def receive = {
     case cmd: SaltCommand => {
+      log.info(s"cmd: ${cmd}; remoteSender: ${sender}")
+
       val saltCmd = context.actorOf(Props(classOf[SaltCommandActor], cmd, sender).withDispatcher("execute-dispatcher"))
-      //log.info(s"remoteSender: ${sender}")
-      println(s"cmd: ${cmd}")
-      println(s"remoteSender: ${sender}")
       saltCmd ! Run
     }
 
     // 从cmd触发过来
     case CheckJob(jid, delayTime) => {
-      val jn = jobName(jid)
       log.debug(s"CommandsActor ==>  ${context.children}")
+
+      val jn = jobName(jid)
       context.child(jn).getOrElse {
         context.actorOf(Props(classOf[SaltResultActor], delayTime), name = jn)
       } ! NotifyMe(sender)
