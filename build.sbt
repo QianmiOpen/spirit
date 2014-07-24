@@ -23,11 +23,4 @@ libraryDependencies ++= {
   )
 }
 
-resolvers ++= Seq(
-  "Nexus repository" at "http://nexus.dev.ofpay.com/nexus/content/groups/public/",
-  "JBoss repository" at "https://repository.jboss.org/nexus/content/repositories/",
-  "Scala-Tools Maven2 Snapshots Repository" at "http://scala-tools.org/repo-snapshots",
-  "oss" at "https://oss.sonatype.org/content/repositories/staging/"
-)
-
 mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf")) }
