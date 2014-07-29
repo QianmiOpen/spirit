@@ -142,7 +142,7 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
 
   val reRunNotifySet = mutable.Set[ActorRef]().empty
 
-  var mergedJonsonRet = Json.obj()
+  var mergedJonsonRet = Json.arr()
 
   var scheduleOne: Cancellable = _
 
@@ -201,7 +201,7 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
             log.debug(s"JobResult stop immediatly: ${jobRet}")
           }
         } else {
-          mergedJonsonRet = mergedJonsonRet ++ retJson.as[JsObject]
+          mergedJonsonRet = mergedJonsonRet :+ retJson
 
           if (scheduleOne != null) scheduleOne.cancel
 
