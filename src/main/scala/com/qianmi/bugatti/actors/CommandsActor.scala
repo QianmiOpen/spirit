@@ -13,18 +13,21 @@ import scala.sys.process.Process
  * Created by mind on 7/16/14.
  */
 
+trait SpiritCommand;
+trait SpiritResult;
+
 // salt执行命令
-case class SaltCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".")
+case class SaltCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".") extends SpiritCommand
 
 // salt执行结果
-case class SaltResult(result: String, excuteMicroseconds: Long)
+case class SaltResult(result: String, excuteMicroseconds: Long) extends SpiritCommand
 
 // 执行超时
-case class TimeOut()
+case class TimeOut() extends SpiritResult
 
-case class SaltRunCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".")
+case class SaltRunCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".") extends SpiritResult
 
-case class SaltRunResult(result: String, excuteMicroseconds: Long)
+case class SaltRunResult(result: String, excuteMicroseconds: Long) extends SpiritResult
 
 class CommandsActor extends Actor with ActorLogging {
   val JobNameFormat = "Job_%s"
