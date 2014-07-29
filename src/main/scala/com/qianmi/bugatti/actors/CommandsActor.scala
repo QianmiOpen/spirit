@@ -1,7 +1,6 @@
 package com.qianmi.bugatti.actors
 
 import java.io.File
-import java.util.Date
 
 import akka.actor._
 import play.api.libs.json.{JsObject, Json}
@@ -23,6 +22,10 @@ case class SaltResult(result: String, excuteMicroseconds: Long)
 // 执行超时
 case class TimeOut()
 
+case class SaltRunCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".")
+
+case class SaltRunResult(result: String, excuteMicroseconds: Long)
+
 class CommandsActor extends Actor with ActorLogging {
   val JobNameFormat = "Job_%s"
 
@@ -36,6 +39,13 @@ class CommandsActor extends Actor with ActorLogging {
 
       val saltCmd = context.actorOf(Props(classOf[SaltCommandActor], cmd, sender).withDispatcher("execute-dispatcher"))
       saltCmd ! Run
+    }
+
+    case cmd: SaltRunCommand => {
+      log.info(s"cmd: ${cmd}; remoteSender: ${sender}")
+
+      val saltRunCmd = context.actorOf(Props(classOf[SaltRunCommand], cmd, sender).withDispatcher("execute-dispatcher"))
+      saltRunCmd ! Run
     }
 
     // 从cmd触发过来
@@ -76,6 +86,25 @@ class CommandsActor extends Actor with ActorLogging {
   }
 }
 
+private class SaltRunActor(cmd: SaltRunCommand, remoteSender: ActorRef) extends Actor with ActorLogging {
+  val beginTime = System.currentTimeMillis()
+
+  override def receive: Actor.Receive = {
+    case Run => {
+      try {
+        val ret = Process(Seq("salt-run") ++ cmd.command, new File(cmd.workDir)).lines.mkString(",")
+
+        remoteSender ! SaltRunResult(ret, System.currentTimeMillis() - beginTime)
+
+        log.debug( s"""Execute saltrun "${cmd.command.mkString(" ")}"; path: ${self.path}; ret: ${ret}""")
+      } catch {
+        case x: Exception => {
+          log.warning(s"Run exception: ${x}; path: ${self.path}")
+        }
+      }
+    }
+  }
+}
 
 private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends Actor with ActorLogging {
 
@@ -85,7 +114,7 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
 
   val TimeOutSeconds = 600 seconds
 
-  val beginDate = new Date
+  val beginTime = System.currentTimeMillis()
 
   var jid = ""
 
@@ -127,7 +156,7 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
     }
 
     case jobRet: JobFinish => {
-      remoteSender ! SaltResult(jobRet.result, (new Date().getTime - beginDate.getTime))
+      remoteSender ! SaltResult(jobRet.result, System.currentTimeMillis() - beginTime)
 
       context.stop(self)
     }
