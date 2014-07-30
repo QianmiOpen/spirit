@@ -85,6 +85,8 @@ class CommandsActor extends Actor with ActorLogging {
       sender ! ret
     }
 
+    case d: DeadLetter => log.info(s"$d")
+
     case x => log.info(s"Unknown commands message: ${x}")
   }
 }
@@ -174,7 +176,8 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
 
   val reRunNotifySet = mutable.Set[ActorRef]().empty
 
-  var mergedJonsonRet = Json.arr()
+//  var mergedJonsonRet = Json.arr()
+  var mergedJonsonRet = Json.obj()
 
   var scheduleOne: Cancellable = _
 
@@ -233,7 +236,8 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
             log.debug(s"JobResult stop immediatly: ${jobRet}")
           }
         } else {
-          mergedJonsonRet = mergedJonsonRet :+ retJson
+//          mergedJonsonRet = mergedJonsonRet :+ retJson
+          mergedJonsonRet = mergedJonsonRet ++ retJson.as[JsObject]
 
           if (scheduleOne != null) scheduleOne.cancel
 

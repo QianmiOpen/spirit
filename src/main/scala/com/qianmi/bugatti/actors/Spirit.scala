@@ -21,5 +21,7 @@ object Spirit {
     val commandsActor = system.actorOf(Props[CommandsActor], name = "SpiritCommands")
     val httpActor = system.actorOf(Props(classOf[HttpServiceActor], commandsActor), "SpiritHttpService")
     IO(Http) ! Http.Bind(httpActor, interface = ipAddress, port = httpPort)
+
+    system.eventStream.subscribe(commandsActor, classOf[DeadLetter])
   }
 }
