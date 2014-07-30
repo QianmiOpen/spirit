@@ -19,15 +19,16 @@ trait SpiritResult;
 // salt执行命令
 case class SaltCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".") extends SpiritCommand
 
+case class SaltRunCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".") extends SpiritCommand
+
 // salt执行结果
-case class SaltResult(result: String, excuteMicroseconds: Long) extends SpiritCommand
+case class SaltResult(result: String, excuteMicroseconds: Long) extends SpiritResult
+
+case class SaltRunResult(result: String, excuteMicroseconds: Long) extends SpiritResult
 
 // 执行超时
 case class TimeOut() extends SpiritResult
 
-case class SaltRunCommand(command: Seq[String], delayTime: Int = 0, workDir: String = ".") extends SpiritResult
-
-case class SaltRunResult(result: String, excuteMicroseconds: Long) extends SpiritResult
 
 class CommandsActor extends Actor with ActorLogging {
   val JobNameFormat = "Job_%s"
@@ -159,6 +160,7 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
     }
 
     case jobRet: JobFinish => {
+      log.debug(s"SaltCommandActor JobFinish: ${jobRet}")
       remoteSender ! SaltResult(jobRet.result, System.currentTimeMillis() - beginTime)
 
       context.stop(self)
@@ -200,6 +202,7 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
 
     case NotifyMe(cmdActor) => {
       log.debug(s" this is NotifyMe in SaltResultActor !")
+
       if (bReturn) {
         cmdActor ! m_jobRet
       }
@@ -210,10 +213,15 @@ private class SaltResultActor(delayTime: Int) extends Actor with ActorLogging {
     }
 
     case jobRet: JobFinish => {
+      log.debug(s"JobFinish: ${jobRet}")
+
       val retJson = Json.parse(jobRet.result)
       val resultLines = (retJson \ "result" \ "return").validate[Seq[String]].asOpt.getOrElse(Seq.empty)
+      log.debug(s"resultLines: ${resultLines}")
 
       if (resultLines.nonEmpty && resultLines.last.contains("is running as PID")) {
+        log.debug(s"need rerun")
+
         reRunJid = resultLines.last.replaceAll("^.* with jid ", "")
 
         if (m_cmdActor != null) {
