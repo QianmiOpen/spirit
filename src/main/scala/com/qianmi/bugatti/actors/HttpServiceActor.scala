@@ -1,6 +1,7 @@
 package com.qianmi.bugatti.actors
 
 import akka.actor._
+import akka.event.LoggingReceive
 import akka.util.Timeout
 import spray.can.Http
 import spray.http.HttpMethods._
@@ -20,7 +21,7 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
 
   implicit val timeout: Timeout = 3 seconds // for the actor 'asks'
 
-  def receive = {
+  def receive = LoggingReceive {
     // when a new connection comes in we register ourselves as the connection handler
     case _: Http.Connected => sender ! Http.Register(self)
 
@@ -55,8 +56,6 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
 
         commandsActor ! JobFinish(jid, result)
         sender ! HttpResponse(entity = "OK")
-
-        log.debug(s"jid: ${jid}, hostName: ${hostName}, content: ${result}")
       } else {
         log.warning(s"Request Error: \npath: ${path}\nentity:${entity}")
         sender ! HttpResponse(entity = "ERROR")

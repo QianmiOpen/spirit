@@ -6,7 +6,7 @@ name := "spirit"
 
 organization := "com.qianmi.bugatti"
 
-version := "1.2"
+version := "1.2.2-SNAPSHOT"
 //version := "1.1-SNAPSHOT"
 
 scalaVersion := "2.10.3"
