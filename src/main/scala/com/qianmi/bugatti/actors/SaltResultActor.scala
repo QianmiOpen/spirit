@@ -35,11 +35,11 @@ private class SaltResultActor(jid: String) extends Actor with ActorLogging {
 
   val DelayStopTime = 60
 
-  val DelayFinishDelayTime = 3
+  val DelayFinishDelayTime = 15
 
   val SendCommandDelayTime = 1
 
-  val CommandNotReceiveDelayTime = 3
+  val CommandNotReceiveDelayTime = 15
 
   val reRunNotifySet = mutable.Set[ActorRef]().empty
 
@@ -171,6 +171,7 @@ private class SaltResultActor(jid: String) extends Actor with ActorLogging {
     }
 
     case TimeOut => {
+      log.debug(s"jid: ${jid} Timeout.")
       if (delayFinishSchedule != null) {
         delayFinishSchedule.cancel
         delayFinishSchedule = null

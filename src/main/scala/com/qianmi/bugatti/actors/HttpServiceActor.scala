@@ -21,14 +21,19 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
 
   implicit val timeout: Timeout = 3 seconds // for the actor 'asks'
 
-  def receive = LoggingReceive {
+  var timeoutTimes = 0
+
+  def receive = {
     // when a new connection comes in we register ourselves as the connection handler
     case _: Http.Connected => sender ! Http.Register(self)
 
     case HttpRequest(GET, Uri.Path("/job"), _, _, _) => {
       val result = Await.result((commandsActor ? Status).mapTo[Seq[String]], 3 seconds)
 
-      sender ! HttpResponse(entity = if (result.isEmpty) "Empty" else result.mkString("\n"))
+      val jobCount = result.count(_.contains("Job_"))
+      val cmdCount = result.length - jobCount
+
+      sender ! HttpResponse(entity = s"""timeoutTimes:${timeoutTimes}, cmdCount: ${cmdCount}, jobCount: ${jobCount}""")
     }
 
     case HttpRequest(GET, Uri.Path(path), _, _, _) if path startsWith "/test" => {
@@ -37,15 +42,19 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
 
       val doCount = if (number.length <= 0) 1 else number.toInt
 
+      timeoutTimes = 0
+
       for (i <- 1 to doCount) {
         //      inbox.send(commandsActor, SaltCommand(Seq("salt", "minion0", "state.sls", "java.install")))
         //      inbox.send(commandsActor, SaltCommand(Seq("salt", "*", "test.ping"), 3))
         //      inbox.send(commandsActor, SaltCommand(Seq("salt", "8e6499e6412a", "test.ping")))
-        commandsActor ! SaltCommand(Seq("salt", "minion0", "test.ping"))
+        commandsActor ! SaltCommand(Seq("salt", "0bb50d107f93", "test.ping"))
       }
 
       sender ! HttpResponse(entity = "test ok")
     }
+
+    case TimeOut() => timeoutTimes += 1
 
     case HttpRequest(POST, Uri.Path(path), _, entity, _) if path startsWith "/job" => {
 

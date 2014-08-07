@@ -34,7 +34,7 @@ class CommandsActor extends Actor with ActorLogging {
 
   override def receive = LoggingReceive {
     case cmd: SaltCommand => {
-      log.info(s"remoteSender: ${sender}")
+      log.debug(s"remoteSender: ${sender}")
 
       val saltCmd = context.actorOf(Props(classOf[SaltCommandActor], cmd, sender).withDispatcher("execute-dispatcher"))
       saltCmd ! Run

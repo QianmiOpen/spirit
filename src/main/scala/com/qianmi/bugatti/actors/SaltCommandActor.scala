@@ -51,7 +51,6 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
             val ret = Process(cmd.command ++ Seq("--return", "spirit", "--async"), new File(cmd.workDir)).lines.mkString(",")
             if (ret.size > 0 && ret.contains("Executed command with job ID")) {
               jid = ret.replaceAll("Executed command with job ID: ", "")
-              log.info(s"SaltCommandActor ==> ${context.parent}")
               context.parent ! JobNotify(jid, self)
 
               log.debug( s"""Execute "${cmd.command.mkString(" ")}"; path: ${self.path}; ret: ${ret}""")
