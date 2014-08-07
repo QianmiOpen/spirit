@@ -75,7 +75,7 @@ private class SaltResultActor(jid: String) extends Actor with ActorLogging {
   }
 
   override def receive = LoggingReceive {
-    case JobReRunNotify(jid, cmdActor) => {
+    case JobReRunNotify(_, cmdActor) => {
       if (m_jobFinished && cmdActor != null) {
         cmdActor ! Run
       }
@@ -98,7 +98,7 @@ private class SaltResultActor(jid: String) extends Actor with ActorLogging {
       m_cmdActor = cmdActor
     }
 
-    case JobBegin => {
+    case JobBegin(_, _) => {
       if (commandNotReceiveTimeoutSchedule != null) {
         commandNotReceiveTimeoutSchedule.cancel()
         commandNotReceiveTimeoutSchedule = null
@@ -110,8 +110,8 @@ private class SaltResultActor(jid: String) extends Actor with ActorLogging {
       sendCommandTimeoutSchedule = context.system.scheduler.scheduleOnce(SendCommandDelayTime seconds, self , SendCommandFinish)
     }
 
-    case jobRet: JobFinish => {
-      val retJson = Json.parse(jobRet.result)
+    case JobFinish(_, result) => {
+      val retJson = Json.parse(result)
       val resultLines = (retJson \ "result" \ "return").validate[Seq[String]].asOpt.getOrElse(Seq.empty)
       log.debug(s"resultLines: ${resultLines}")
 
