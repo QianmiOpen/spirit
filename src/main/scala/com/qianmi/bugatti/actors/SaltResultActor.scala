@@ -17,6 +17,19 @@ import scala.language.postfixOps
  *
  * 整个result延时60秒关闭。
  */
+
+trait JobMsg {
+  val jid: String
+}
+
+private case class JobNotify(jid: String, cmdActor: ActorRef) extends JobMsg
+
+private case class JobReRunNotify(jid: String, cmdActor: ActorRef) extends JobMsg
+
+private case class JobBegin(jid: String, ipAddr: String) extends JobMsg
+
+private case class JobFinish(jid: String, result: String) extends JobMsg
+
 private class SaltResultActor(jid: String) extends Actor with ActorLogging {
   import context._
 
@@ -62,7 +75,7 @@ private class SaltResultActor(jid: String) extends Actor with ActorLogging {
   }
 
   override def receive = LoggingReceive {
-    case ReRunNotify(jid, cmdActor) => {
+    case JobReRunNotify(jid, cmdActor) => {
       if (m_jobFinished && cmdActor != null) {
         cmdActor ! Run
       }
@@ -72,14 +85,14 @@ private class SaltResultActor(jid: String) extends Actor with ActorLogging {
       }
     }
 
-    case NotifyMe(cmdActor) => {
+    case JobNotify(_, cmdActor) => {
       if (m_jobFinished) {
         cmdActor ! JobFinish(jid, Json.stringify(mergedJonsonRet))
       }
 
       // 本job返回结果是一个需要rerun的job，则发送rerunnotify
       if (m_reRunJid.length > 0) {
-        context.parent ! ReRunNotify(m_reRunJid, cmdActor)
+        context.parent ! JobReRunNotify(m_reRunJid, cmdActor)
       }
 
       m_cmdActor = cmdActor
@@ -108,7 +121,7 @@ private class SaltResultActor(jid: String) extends Actor with ActorLogging {
         m_reRunJid = resultLines.last.replaceAll("^.* with jid ", "")
 
         if (m_cmdActor != null) {
-          context.parent ! ReRunNotify(m_reRunJid, m_cmdActor)
+          context.parent ! JobReRunNotify(m_reRunJid, m_cmdActor)
         }
       } else {
         if (delayFinishSchedule != null) {

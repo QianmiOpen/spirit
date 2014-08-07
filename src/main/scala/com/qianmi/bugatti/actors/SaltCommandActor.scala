@@ -52,7 +52,7 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
             if (ret.size > 0 && ret.contains("Executed command with job ID")) {
               jid = ret.replaceAll("Executed command with job ID: ", "")
               log.info(s"SaltCommandActor ==> ${context.parent}")
-              context.parent ! CheckJob(jid)
+              context.parent ! JobNotify(jid, self)
 
               log.debug( s"""Execute "${cmd.command.mkString(" ")}"; path: ${self.path}; ret: ${ret}""")
             }
@@ -98,17 +98,7 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
 // 运行命令
 private case class Run()
 
-private case class CheckJob(jid: String)
-
-private case class JobBegin(jid: String, ipAddr: String)
-
-private case class JobFinish(jid: String, result: String)
-
-private case class ReRunNotify(jid: String, cmdActor: ActorRef)
-
 private case class Status()
-
-private case class NotifyMe(cmdActor: ActorRef)
 
 private case class Stop()
 

@@ -9,9 +9,9 @@ import scala.language.postfixOps
  * Created by mind on 7/16/14.
  */
 
-trait SpiritCommand;
+trait SpiritCommand
 
-trait SpiritResult;
+trait SpiritResult
 
 // salt执行命令
 case class SaltCommand(command: Seq[String], workDir: String = ".") extends SpiritCommand
@@ -29,44 +29,22 @@ class CommandsActor extends Actor with ActorLogging {
 
   val DelayStopJobResult = 3
 
+  def getJob(jid: String) = {
+  }
+
   override def receive = LoggingReceive {
     case cmd: SaltCommand => {
-      log.info(s"cmd: ${cmd}; remoteSender: ${sender}")
+      log.info(s"remoteSender: ${sender}")
 
       val saltCmd = context.actorOf(Props(classOf[SaltCommandActor], cmd, sender).withDispatcher("execute-dispatcher"))
       saltCmd ! Run
     }
 
-    // 从cmd触发过来
-    case CheckJob(jid) => {
-      val jn = jobName(jid)
+    case jobMsg: JobMsg => {
+      val jn = jobName(jobMsg.jid)
       context.child(jn).getOrElse {
-        context.actorOf(Props(classOf[SaltResultActor], jid), name = jn)
-      } ! NotifyMe(sender)
-    }
-
-    // 从jobresult触发过来，通知另一个job
-    case reRun: ReRunNotify => {
-      val jn = jobName(reRun.jid)
-      context.child(jn).getOrElse {
-        context.actorOf(Props(classOf[SaltResultActor], reRun.jid), name = jn)
-      } ! reRun
-    }
-
-    // 从logUdpActor触发过来
-    case jobBegin: JobBegin => {
-      val jn = jobName(jobBegin.jid)
-      context.child(jn).getOrElse {
-        context.actorOf(Props(classOf[SaltResultActor], jobBegin.jid), name = jn)
-      } ! JobBegin
-    }
-
-    // 从httpserverActor触发过来
-    case jobRet: JobFinish => {
-      val jn = jobName(jobRet.jid)
-      context.child(jn).getOrElse {
-        context.actorOf(Props(classOf[SaltResultActor], jobRet.jid), name = jn)
-      } ! jobRet
+        context.actorOf(Props(classOf[SaltResultActor], jobMsg.jid), name = jn)
+      } ! jobMsg
     }
 
     case Status => {
