@@ -22,6 +22,6 @@ object Spirit {
     val httpActor = system.actorOf(Props(classOf[HttpServiceActor], commandsActor), "SpiritHttpService")
     IO(Http) ! Http.Bind(httpActor, interface = ipAddress, port = httpPort)
 
-    system.eventStream.subscribe(commandsActor, classOf[DeadLetter])
+    val logUdpActor = system.actorOf(Props(classOf[LogUdpActor], commandsActor, ipAddress, httpPort), name = "LogUdp")
   }
 }

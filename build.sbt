@@ -6,7 +6,7 @@ name := "spirit"
 
 organization := "com.qianmi.bugatti"
 
-version := "1.1"
+version := "1.3.1"
 //version := "1.1-SNAPSHOT"
 
 scalaVersion := "2.10.3"
@@ -25,3 +25,5 @@ libraryDependencies ++= {
 }
 
 mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf")) }
+
+scalacOptions in ThisBuild ++= Seq("-feature")
