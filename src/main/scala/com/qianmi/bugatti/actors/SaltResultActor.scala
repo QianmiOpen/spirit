@@ -111,6 +111,11 @@ private class SaltResultActor(jid: String) extends Actor with ActorLogging {
     }
 
     case JobFinish(_, result) => {
+      if (commandNotReceiveTimeoutSchedule != null) {
+        commandNotReceiveTimeoutSchedule.cancel()
+        commandNotReceiveTimeoutSchedule = null
+      }
+
       val retJson = Json.parse(result)
       val resultLines = (retJson \ "result" \ "return").validate[Seq[String]].asOpt.getOrElse(Seq.empty)
       log.debug(s"resultLines: ${resultLines}")
