@@ -2,6 +2,7 @@ package com.qianmi.bugatti.actors
 
 import akka.actor._
 import akka.event.LoggingReceive
+import akka.io.Tcp.PeerClosed
 import akka.util.Timeout
 import spray.can.Http
 import spray.http.HttpMethods._
@@ -21,8 +22,6 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
 
   implicit val timeout: Timeout = 3 seconds // for the actor 'asks'
 
-  var timeoutTimes = 0
-
   def receive = {
     // when a new connection comes in we register ourselves as the connection handler
     case _: Http.Connected => sender ! Http.Register(self)
@@ -33,7 +32,7 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
       val jobCount = result.count(_.contains("Job_"))
       val cmdCount = result.length - jobCount
 
-      sender ! HttpResponse(entity = s"""timeoutTimes:${timeoutTimes}, cmdCount: ${cmdCount}, jobCount: ${jobCount}""")
+      sender ! HttpResponse(entity = s"""cmdCount: ${cmdCount}, jobCount: ${jobCount}""")
     }
 
     case HttpRequest(GET, Uri.Path(path), _, _, _) if path startsWith "/test" => {
@@ -41,8 +40,6 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
       val number = path.stripPrefix("/test").stripPrefix("/")
 
       val doCount = if (number.length <= 0) 1 else number.toInt
-
-      timeoutTimes = 0
 
       for (i <- 1 to doCount) {
         //      inbox.send(commandsActor, SaltCommand(Seq("salt", "minion0", "state.sls", "java.install")))
@@ -53,8 +50,6 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
 
       sender ! HttpResponse(entity = "test ok")
     }
-
-    case TimeOut() => timeoutTimes += 1
 
     case HttpRequest(POST, Uri.Path(path), _, entity, _) if path startsWith "/job" => {
 
@@ -80,7 +75,9 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
       )
     }
 
-    case SaltResult(lines, time) => log.debug(s"execute ${time}ms: result: ${lines}")
+    case x => {
+      log.debug(s"Unknown message $x")
+    }
 
     //    case HttpRequest(GET, Uri.Path("/stop"), _, _, _) =>
     //      sender ! HttpResponse(entity = "Shutting down in 1 second ...")

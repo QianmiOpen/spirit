@@ -15,51 +15,36 @@ import scala.language.postfixOps
  */
 private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends Actor with ActorLogging {
 
-  import context._
-
-  var timeOutSchedule: Cancellable = _
-
-  val TimeOutSeconds = 600 seconds
-
   val beginTime = System.currentTimeMillis()
-
-  var jid = ""
 
   var reRunTimesWhenException = 1
 
-  val AllHost = "*"  // 命令执行，标示所有主机
-
-  val AllHostDelaySeconds = 3 // 针对所有主机执行命令时，延时返回的秒数
-
-  val NoDelay = 0   // 针对单一主机执行命令时，不等待
-
-  override def preStart(): Unit = {
-    timeOutSchedule = context.system.scheduler.scheduleOnce(TimeOutSeconds, self, TimeOut)
-  }
-
-  override def postStop(): Unit = {
-    if (timeOutSchedule != null) {
-      timeOutSchedule.cancel()
-    }
-  }
+  final val AllHost = "*"  // 命令执行，标示所有主机
 
   override def receive = LoggingReceive {
     case Run => {
       try {
         cmd.command match {
           case Seq("salt", xs@_*) => {
-            val ret = Process(cmd.command ++ Seq("--return", "spirit", "--async"), new File(cmd.workDir)).lines.mkString(",")
-            if (ret.size > 0 && ret.contains("Executed command with job ID")) {
-              jid = ret.replaceAll("Executed command with job ID: ", "")
-              context.parent ! JobNotify(jid, self)
+            if (cmd.command(1).contains(AllHost) || cmd.command(1).contains("-L")) {
+              remoteSender ! SaltJobError("Not support multi-host command", System.currentTimeMillis() - beginTime)
+              context.stop(self)
+            } else {
+              val hostName = cmd.command(1)
+              val ret = Process(cmd.command ++ Seq("--return", "spirit", "--async"), new File(cmd.workDir)).lines.mkString(",")
+              if (ret.size > 0 && ret.contains("Executed command with job ID")) {
+                val jid = ret.replaceAll("Executed command with job ID: ", "")
+                context.parent ! JobNotify(jid, beginTime, hostName, remoteSender)
+                remoteSender ! SaltJobBegin(jid, System.currentTimeMillis() - beginTime)
 
-              log.debug( s"""Execute "${cmd.command.mkString(" ")}"; path: ${self.path}; ret: ${ret}""")
+                log.debug( s"""Execute "${cmd.command.mkString(" ")}"; path: ${self.path}; ret: ${ret}""")
+              }
             }
           }
           case Seq("salt-run", xs@_*) => {
             val ret = Process(cmd.command, new File(cmd.workDir)).lines.mkString(",")
 
-            remoteSender ! SaltResult(ret, System.currentTimeMillis() - beginTime)
+            remoteSender ! SaltJobOk(ret, System.currentTimeMillis() - beginTime)
 
             log.debug( s"""Execute saltrun "${cmd.command.mkString(" ")}"; path: ${self.path}; ret: ${ret}""")
           }
@@ -67,6 +52,8 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
             log.warning(s"Salt Command receive unknown message: ${x}")
           }
         }
+
+        context.stop(self)
       } catch {
         case x: Exception => {
           log.warning(s"Run exception: ${x}; path: ${self.path}")
@@ -78,18 +65,6 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
       }
     }
 
-    case jobRet: JobFinish => {
-      log.debug(s"SaltCommandActor JobFinish: ${jobRet}")
-      remoteSender ! SaltResult(jobRet.result, System.currentTimeMillis() - beginTime)
-
-      context.stop(self)
-    }
-
-    case TimeOut => {
-      remoteSender ! TimeOut()
-      context.stop(self)
-    }
-
     case x => log.info(s"Unknown salt command message: ${x}")
   }
 }
@@ -98,6 +73,3 @@ private class SaltCommandActor(cmd: SaltCommand, remoteSender: ActorRef) extends
 private case class Run()
 
 private case class Status()
-
-private case class Stop()
-

@@ -22,11 +22,13 @@ libraryDependencies ++= {
   Seq(
     "com.typesafe.akka" %% "akka-remote" % akkaV,
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
+    "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
     "io.spray" % "spray-can" % sprayV,
     "com.typesafe.play" %% "play-json" % "2.2.3",
     "ch.qos.logback" % "logback-classic" % "1.1.2",
     "io.kamon" %% "kamon-core" % kamonV,
-    "io.kamon" %% "kamon-statsd" % kamonV
+    "io.kamon" %% "kamon-statsd" % kamonV,
+    "org.scalatest" % "scalatest_2.10" % "2.2.1" % "test"
 //    "io.spray" % "spray-routing" % sprayV
   )
 }
