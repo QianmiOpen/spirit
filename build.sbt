@@ -10,7 +10,7 @@ name := "spirit"
 
 organization := "com.qianmi.bugatti"
 
-version := "1.3.1"
+version := "1.4.0"
 //version := "1.1-SNAPSHOT"
 
 scalaVersion := "2.10.3"
@@ -26,8 +26,8 @@ libraryDependencies ++= {
     "io.spray" % "spray-can" % sprayV,
     "com.typesafe.play" %% "play-json" % "2.2.3",
     "ch.qos.logback" % "logback-classic" % "1.1.2",
-    "io.kamon" %% "kamon-core" % kamonV,
-    "io.kamon" %% "kamon-statsd" % kamonV,
+//    "io.kamon" %% "kamon-core" % kamonV,
+//    "io.kamon" %% "kamon-statsd" % kamonV,
     "org.scalatest" % "scalatest_2.10" % "2.2.1" % "test"
 //    "io.spray" % "spray-routing" % sprayV
   )
