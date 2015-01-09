@@ -12,13 +12,15 @@ import scala.language.postfixOps
  * Created by mind on 12/10/14.
  */
 
-case class ListHosts() extends SpiritCommand
+trait HostCommand
+
+case class ListHosts() extends HostCommand with SpiritCommand
 case class ListHostsResult(hostNames: Seq[String]) extends SpiritResult
 
-case class RemoveHost(hostName: String) extends SpiritCommand
+case class RemoveHost(hostName: String) extends HostCommand with SpiritCommand
 case class RemoveHostResult(hostName: String, result: Boolean) extends SpiritResult
 
-class SaltKeysActor(keyPath: String) extends Actor with ActorLogging {
+class SaltHostsActor(keyPath: String) extends Actor with ActorLogging {
 
   val keyPathFile = new File(keyPath)
 

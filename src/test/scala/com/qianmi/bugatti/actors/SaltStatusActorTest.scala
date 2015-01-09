@@ -17,7 +17,7 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
 
   val HOST_NAME = "ca9ceac56e8f"
 
-  val (commandsActor, httpActor, keysActor) = Spirit.init(system)
+  val (commandsActor, httpActor) = Spirit.init(system)
 
   override def afterAll {
     TestKit.shutdownActorSystem(system)

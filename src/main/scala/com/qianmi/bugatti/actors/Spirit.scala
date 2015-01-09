@@ -17,7 +17,7 @@ import scala.language.postfixOps
  */
 object Spirit {
 
-  def init(actorSystem: ActorSystem): (ActorRef, ActorRef, ActorRef) = {
+  def init(actorSystem: ActorSystem): (ActorRef, ActorRef) = {
     implicit val timeout: Timeout = 5 second
 
     // get config
@@ -32,10 +32,7 @@ object Spirit {
     val fh = IO(Http)(actorSystem) ? Http.Bind(httpActor, interface = ipAddress, port = httpPort)
     Await.result(fh, timeout.duration)
 
-    // init key actor
-    val keysActor = actorSystem.actorOf(Props(classOf[SaltKeysActor], ConfigFactory.load.getString("salt.master.keyPath")), "SpiritKeys")
-
-    (commandsActor, httpActor, keysActor)
+    (commandsActor, httpActor)
   }
 
   def main(args: Array[String]) {

@@ -2,6 +2,7 @@ package com.qianmi.bugatti.actors
 
 import akka.actor._
 import akka.event.LoggingReceive
+import com.typesafe.config.ConfigFactory
 
 import scala.language.postfixOps
 
@@ -35,6 +36,9 @@ class CommandsActor extends Actor with ActorLogging {
 
   val DelayStopJobResult = 3
 
+  // init key actor
+  val keysActor = context.actorOf(Props(classOf[SaltHostsActor], ConfigFactory.load.getString("salt.master.keyPath")), "SpiritHosts")
+
   override def receive = LoggingReceive {
     case cmd: SaltCommand => {
       log.debug(s"remoteSender: ${sender}")
@@ -65,6 +69,10 @@ class CommandsActor extends Actor with ActorLogging {
       }
 
       sender ! ret
+    }
+
+    case hc: HostCommand => {
+      keysActor forward hc
     }
 
     case x => log.info(s"Unknown commands message: ${x}")

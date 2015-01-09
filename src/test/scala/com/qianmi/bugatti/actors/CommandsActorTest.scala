@@ -19,7 +19,7 @@ with WordSpecLike with Matchers with BeforeAndAfterAll {
 
   val timeout: Timeout = 15 second
 
-  val (commandsActor, httpActor, keysActor) = Spirit.init(system)
+  val (commandsActor, httpActor) = Spirit.init(system)
 
   "Commands actor test" must {
     "test all host" in {
