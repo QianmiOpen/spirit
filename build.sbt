@@ -37,7 +37,6 @@ mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf"))
 
 scalacOptions in ThisBuild ++= Seq("-feature")
 
-
 aspectjSettings
 
 inputs in Aspectj <+= compiledClasses

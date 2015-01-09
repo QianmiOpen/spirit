@@ -44,8 +44,12 @@ class CommandsActor extends Actor with ActorLogging {
     }
 
     case ss: SaltStatus => {
-      val ssa = context.actorOf(Props(classOf[SaltStatusActor], sender))
-      ssa ! ss
+      if (ss.hostName == null || ss.hostName.isEmpty) {
+        sender ! SaltJobError("SaltStatus: Host name is empty", 0)
+      } else {
+        val ssa = context.actorOf(Props(classOf[SaltStatusActor], sender))
+        ssa ! ss
+      }
     }
 
     case jobMsg: JobMsg => {

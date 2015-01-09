@@ -61,8 +61,12 @@ class SaltStatusActor(remoteActor: ActorRef) extends Actor with LoggingFSM[State
 
   onTransition {
     case S_Init -> S_Ping => {
-      val addr = InetAddress.getByName(nextStateData.hostIp)
-      self ! CanPing(addr.isReachable(3))
+      if (nextStateData.hostIp == null || nextStateData.hostIp.isEmpty) {
+        self ! CanPing(false)
+      } else {
+        val addr = InetAddress.getByName(nextStateData.hostIp)
+        self ! CanPing(addr.isReachable(3))
+      }
       context.parent ! SaltCommand(Seq("salt", nextStateData.hostName, "test.ping"))
     }
 
