@@ -23,7 +23,7 @@ object SaltStatusActor {
   case class CanPing(ping: Boolean)
 }
 
-class SaltStatusActor(remoteActor: ActorRef) extends Actor with LoggingFSM[State, SaltStatusResult] {
+class SaltStatusActor(remoteActor: ActorRef) extends LoggingFSM[State, SaltStatusResult] {
   startWith(S_Init, SaltStatusResult(null, null, false, false, ""))
 
   when(S_Init) {
