@@ -80,4 +80,6 @@ class SaltStatusActor(remoteActor: ActorRef) extends Actor with LoggingFSM[State
       context.stop(self)
     }
   }
+
+  initialize()
 }

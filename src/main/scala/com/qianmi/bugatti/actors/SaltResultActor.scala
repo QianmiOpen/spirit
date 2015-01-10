@@ -35,7 +35,7 @@ object SaltResultActor {
 
 case class StateData(remoteActor: ActorRef, hostName: String, jobResult: String, beginTime: Long, jid: String)
 
-private class SaltResultActor extends Actor with LoggingFSM[State, StateData] {
+private class SaltResultActor extends LoggingFSM[State, StateData] {
 
   startWith(S_Init, StateData(null, null, null, System.currentTimeMillis(), null))
 
