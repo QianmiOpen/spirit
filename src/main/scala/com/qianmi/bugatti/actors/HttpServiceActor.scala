@@ -50,13 +50,13 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
 
     case _: HttpRequest => sender ! HttpResponse(status = 404, entity = "Unknown resource!")
 
-    case x => log.debug(s"Unknown message $x")
-
     case Timedout(HttpRequest(method, uri, _, _, _)) => {
       sender ! HttpResponse(
         status = 500,
         entity = s"The ${method} request to '${uri}' has timed out..."
       )
     }
+
+    case x => log.debug(s"Unknown message $x")
   }
 }
