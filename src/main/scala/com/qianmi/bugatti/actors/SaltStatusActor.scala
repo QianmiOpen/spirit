@@ -27,8 +27,8 @@ class SaltStatusActor(remoteActor: ActorRef) extends LoggingFSM[State, SaltStatu
   startWith(S_Init, SaltStatusResult(null, null, false, false, ""))
 
   when(S_Init) {
-    case Event(SaltStatus(hostName, hostIp), data: SaltStatusResult) =>
-      goto(S_Ping) using data.copy(hostName = hostName, hostIp = hostIp)
+    case Event(SaltStatus(hostName, hostIp, needMInfo), data: SaltStatusResult) =>
+      goto(S_Ping) using data.copy(hostName = hostName, hostIp = hostIp, needMInfo = needMInfo)
   }
 
   when(S_Ping, stateTimeout = 5 second) {
@@ -37,7 +37,8 @@ class SaltStatusActor(remoteActor: ActorRef) extends LoggingFSM[State, SaltStatu
     case Event(sb: SaltJobBegin, _) =>
       stay
     case Event(sb: SaltJobOk, data: SaltStatusResult) =>
-      goto(S_Grains) using data.copy(canSPing = true)
+      (if (data.needMInfo) { goto(S_Grains) } else { goto(S_Finish) }) using data.copy(canSPing = true)
+
     case Event(StateTimeout, data: SaltStatusResult) =>
       goto(S_Finish) using data.copy(canSPing = false)
   }

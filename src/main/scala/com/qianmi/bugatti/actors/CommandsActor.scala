@@ -15,12 +15,12 @@ trait SpiritCommand
 trait SpiritResult
 
 // salt执行命令
-case class SaltStatus(hostName: String, hostIp: String) extends SpiritCommand
+case class SaltStatus(hostName: String, hostIp: String, needMInfo: Boolean = true) extends SpiritCommand
 case class SaltCommand(command: Seq[String], workDir: String = ".") extends SpiritCommand
 case class SaltJobStop(jid: String) extends JobMsg with SpiritCommand
 
 
-case class SaltStatusResult(hostName: String, hostIp: String, canPing: Boolean, canSPing: Boolean, mmInfo: String) extends SpiritResult
+case class SaltStatusResult(hostName: String, hostIp: String, canPing: Boolean, canSPing: Boolean, mmInfo: String, needMInfo: Boolean = true) extends SpiritResult
 case class SaltJobBegin(jid: String, excuteMicroseconds: Long) extends SpiritResult
 case class SaltJobOk(result: String, excuteMicroseconds: Long) extends SpiritResult
 case class SaltJobError(msg: String, excuteMicroseconds: Long) extends SpiritResult
