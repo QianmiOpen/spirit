@@ -10,7 +10,7 @@ name := "spirit"
 
 organization := "com.qianmi.bugatti"
 
-version := "1.4.2"
+version := "1.4.3"
 //version := "1.1-SNAPSHOT"
 
 scalaVersion := "2.10.4"

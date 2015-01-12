@@ -69,8 +69,14 @@ private class SaltResultActor extends LoggingFSM[State, StateData] {
       goto(S_Finished) using data.copy(jobResult = result)
   }
 
-  when(S_Finished)(FSM.NullFunction)
   when(S_TimeOut)(FSM.NullFunction)
+
+  when(S_Finished, 10 second) {
+    case Event(StateTimeout, _) => {
+      context.stop(self)
+      stay
+    }
+  }
 
   whenUnhandled {
     case Event(e, s) =>
@@ -90,8 +96,6 @@ private class SaltResultActor extends LoggingFSM[State, StateData] {
         nextStateData.remoteActor ! SaltJobOk(Json.stringify(retJson), System.currentTimeMillis() - nextStateData.beginTime)
         log.debug("Salt result:{}", retJson)
       }
-
-      context.stop(self)
     }
 
     case S_Stopping -> S_Finished => {
@@ -113,6 +117,8 @@ private class SaltResultActor extends LoggingFSM[State, StateData] {
       } else {
         log.error("Job timeout without remoteActor")
       }
+
+      goto(S_Finished)
     }
   }
 

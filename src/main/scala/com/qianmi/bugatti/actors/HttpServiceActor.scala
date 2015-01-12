@@ -2,7 +2,7 @@ package com.qianmi.bugatti.actors
 
 import akka.actor._
 import akka.event.LoggingReceive
-import akka.io.Tcp.PeerClosed
+import akka.pattern.ask
 import akka.util.Timeout
 import spray.can.Http
 import spray.http.HttpMethods._
@@ -10,8 +10,6 @@ import spray.http._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import akka.pattern.ask
-
 import scala.language.postfixOps
 
 /**
@@ -22,7 +20,7 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
 
   implicit val timeout: Timeout = 3 seconds // for the actor 'asks'
 
-  def receive = {
+  def receive = LoggingReceive {
     // when a new connection comes in we register ourselves as the connection handler
     case _: Http.Connected => sender ! Http.Register(self)
 
@@ -33,22 +31,6 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
       val cmdCount = result.length - jobCount
 
       sender ! HttpResponse(entity = s"""cmdCount: ${cmdCount}, jobCount: ${jobCount}""")
-    }
-
-    case HttpRequest(GET, Uri.Path(path), _, _, _) if path startsWith "/test" => {
-
-      val number = path.stripPrefix("/test").stripPrefix("/")
-
-      val doCount = if (number.length <= 0) 1 else number.toInt
-
-      for (i <- 1 to doCount) {
-        //      inbox.send(commandsActor, SaltCommand(Seq("salt", "minion0", "state.sls", "java.install")))
-        //      inbox.send(commandsActor, SaltCommand(Seq("salt", "*", "test.ping"), 3))
-        //      inbox.send(commandsActor, SaltCommand(Seq("salt", "8e6499e6412a", "test.ping")))
-        commandsActor ! SaltCommand(Seq("salt", "a781eb39bc7e", "test.ping"))
-      }
-
-      sender ! HttpResponse(entity = "test ok")
     }
 
     case HttpRequest(POST, Uri.Path(path), _, entity, _) if path startsWith "/job" => {
@@ -68,22 +50,13 @@ class HttpServiceActor(commandsActor: ActorRef) extends Actor with ActorLogging 
 
     case _: HttpRequest => sender ! HttpResponse(status = 404, entity = "Unknown resource!")
 
+    case x => log.debug(s"Unknown message $x")
+
     case Timedout(HttpRequest(method, uri, _, _, _)) => {
       sender ! HttpResponse(
         status = 500,
         entity = s"The ${method} request to '${uri}' has timed out..."
       )
     }
-
-    case x => {
-      log.debug(s"Unknown message $x")
-    }
-
-    //    case HttpRequest(GET, Uri.Path("/stop"), _, _, _) =>
-    //      sender ! HttpResponse(entity = "Shutting down in 1 second ...")
-    //      sender ! Http.Close
-    //      context.system.scheduler.scheduleOnce(1.second) {
-    //        context.system.shutdown()
-    //      }
   }
 }
