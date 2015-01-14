@@ -10,14 +10,14 @@ name := "spirit"
 
 organization := "com.qianmi.bugatti"
 
-version := "1.4.4"
+version := "1.4.5"
 //version := "1.1-SNAPSHOT"
 
 scalaVersion := "2.10.4"
 
 libraryDependencies ++= {
   val sprayV = "1.2.1"
-  val akkaV = "2.2.4"
+  val akkaV = "2.3.8"
   val kamonV = "0.2.3"
   Seq(
     "com.typesafe.akka" %% "akka-remote" % akkaV,
