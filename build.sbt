@@ -1,8 +1,8 @@
 import com.github.retronym.SbtOneJar._
 
-import com.typesafe.sbt.SbtAspectj.{ Aspectj, aspectjSettings, compiledClasses }
-
-import com.typesafe.sbt.SbtAspectj.AspectjKeys.{ binaries, inputs, lintProperties }
+//import com.typesafe.sbt.SbtAspectj.{ Aspectj, aspectjSettings, compiledClasses }
+//
+//import com.typesafe.sbt.SbtAspectj.AspectjKeys.{ binaries, inputs, lintProperties }
 
 oneJarSettings
 
@@ -16,14 +16,14 @@ version := "1.4.6"
 scalaVersion := "2.10.4"
 
 libraryDependencies ++= {
-  val sprayV = "1.2.1"
+  val sprayV = "1.3.2"
   val akkaV = "2.3.8"
   val kamonV = "0.2.3"
   Seq(
     "com.typesafe.akka" %% "akka-remote" % akkaV,
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
-    "io.spray" % "spray-can" % sprayV,
+    "io.spray" %% "spray-can" % sprayV,
     "com.typesafe.play" %% "play-json" % "2.2.3",
     "ch.qos.logback" % "logback-classic" % "1.1.2",
 //    "io.kamon" %% "kamon-core" % kamonV,
@@ -37,10 +37,10 @@ mappings in (Compile, packageBin) ~= { _.filter(!_._1.getName.endsWith(".conf"))
 
 scalacOptions in ThisBuild ++= Seq("-feature")
 
-aspectjSettings
-
-inputs in Aspectj <+= compiledClasses
-
-products in Compile <<= products in Aspectj
-
-products in Runtime <<= products in Compile
+//aspectjSettings
+//
+//inputs in Aspectj <+= compiledClasses
+//
+//products in Compile <<= products in Aspectj
+//
+//products in Runtime <<= products in Compile
