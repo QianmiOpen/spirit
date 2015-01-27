@@ -113,7 +113,7 @@ private class SaltResultActor extends LoggingFSM[State, StateData] {
     case S_Notified -> S_TimeOut => {
       log.debug("{}, {}", stateData, nextStateData)
       if (nextStateData.remoteActor != null) {
-        nextStateData.remoteActor ! SaltTimeOut()
+        nextStateData.remoteActor ! SaltTimeOut
       } else {
         log.error("Job timeout without remoteActor")
       }
